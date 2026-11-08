@@ -1,0 +1,59 @@
+name: daily-filter
+
+on:
+  schedule:
+    # UTC 0/6/12/18 = 北京时间 08:00 / 14:00 / 20:00 / 02:00
+    - cron: '0 0,6,12,18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-filter
+  cancel-in-progress: false
+
+jobs:
+  filter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: setup mihomo
+        run: |
+          set -euo pipefail
+          tag=$(curl -fsSL https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | grep -oP '"tag_name":\s*"\K[^"]+')
+          echo "mihomo tag: $tag"
+          url="https://github.com/MetaCubeX/mihomo/releases/download/${tag}/mihomo-linux-amd64-compatible-${tag}.gz"
+          echo "download: $url"
+          curl -fsSL -o mihomo.gz "$url"
+          gunzip -f mihomo.gz
+          chmod +x mihomo
+          ./mihomo -v
+
+      - name: filter nodes
+        run: python3 filter/filter.py
+
+      - name: commit result
+        run: |
+          set -euo pipefail
+          git config user.name "auto-filter"
+          git config user.email "auto-filter@users.noreply.github.com"
+          git add live-links.txt live-sub.txt filter/pool.txt filter/report.txt
+          if git diff --staged --quiet; then
+            echo "no change"
+            exit 0
+          fi
+          n=$(grep -c '://' live-links.txt || echo 0)
+          git commit -m "auto: $(date -u '+%F %H:%M UTC') ${n} nodes"
+          git push
+
+      - name: purge jsdelivr
+        if: always()
+        run: |
+          curl -sS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/live-links.txt" || true
+          curl -sS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/live-sub.txt" || true
