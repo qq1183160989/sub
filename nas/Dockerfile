@@ -19,7 +19,7 @@ RUN set -eux; \
     chmod +x /app/mihomo; \
     /app/mihomo -v
 
-COPY filter.py sources.txt run.sh serve.py /app/
+COPY filter.py sources.txt run.sh serve.py push.py /app/
 RUN chmod +x /app/run.sh && mkdir -p /app/out
 
 ENV OUT_DIR=/app/out
