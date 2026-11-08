@@ -14,11 +14,13 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 WORK = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(WORK)
+ROOT = os.environ.get("OUT_DIR") or os.path.dirname(WORK)
+os.makedirs(ROOT, exist_ok=True)
 OUT_LINKS = os.path.join(ROOT, "live-links.txt")
 OUT_SUB = os.path.join(ROOT, "live-sub.txt")
-POOL = os.path.join(WORK, "pool.txt")
-REPORT = os.path.join(WORK, "report.txt")
+STATE = os.environ.get("STATE_DIR") or WORK
+POOL = os.path.join(STATE, "pool.txt")
+REPORT = os.path.join(STATE, "report.txt")
 MIXED_PORT = 17899
 API_PORT = 19090
 
