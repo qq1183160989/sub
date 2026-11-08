@@ -1,0 +1,23 @@
+services:
+  auto-filter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: auto-filter:latest
+    container_name: auto-filter
+    restart: unless-stopped
+    ports:
+      - "18080:18080"
+    environment:
+      TZ: Asia/Shanghai
+      OUT_DIR: /app/out
+      SERVE_PORT: "18080"
+      FILTER_INTERVAL: "21600"
+    volumes:
+      - ./out:/app/out
+      - ./state:/app/state
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
